@@ -1,55 +1,80 @@
 
-from typing import TypedDict
+from typing import TypedDict, Literal
 from langgraph.graph import StateGraph, START, END
 
 
-# 1. Definir el estado compartido
+# 1. STATE
 class AgentState(TypedDict):
     servidor: str
     cpu: int
+    proceso: str
     diagnostico: str
 
 
-# 2. Primer nodo: consultar CPU
+# 2. NODE: Consultar CPU
 def consultar_cpu(state: AgentState):
     print(f"Consultando CPU de {state['servidor']}")
 
-    # Simulamos un valor de CPU
+    # CPU simulada para practicar
     return {"cpu": 35}
 
 
-# 3. Segundo nodo: analizar CPU
-def analizar_cpu(state: AgentState):
-    cpu = state["cpu"]
+# 3. ROUTER: Decidir el siguiente paso
+def decidir_ruta(state: AgentState) -> Literal[
+    "consultar_procesos", "__end__"
+]:
+    if state["cpu"] > 90:
+        print("CPU elevada. Consultando procesos...")
+        return "consultar_procesos"
 
-    if cpu > 90:
-        resultado = "CRITICAL: CPU muy alta"
-    else:
-        resultado = "OK: CPU normal"
-
-    return {"diagnostico": resultado}
+    print("CPU normal. Finalizando.")
+    return "__end__"
 
 
-# 4. Construir el grafo
+# 4. NODE: Consultar procesos
+def consultar_procesos(state: AgentState):
+    print("Consultando procesos Linux...")
+
+    # Proceso simulado
+    return {
+        "proceso": "oracle",
+        "diagnostico": "CPU elevada. Proceso oracle detectado."
+    }
+
+
+# 5. CREAR EL GRAFO
 builder = StateGraph(AgentState)
 
 builder.add_node("consultar_cpu", consultar_cpu)
-builder.add_node("analizar_cpu", analizar_cpu)
+builder.add_node("consultar_procesos", consultar_procesos)
 
-# 5. Conectar los nodos
+
+# 6. DEFINIR CONEXIONES
 builder.add_edge(START, "consultar_cpu")
-builder.add_edge("consultar_cpu", "analizar_cpu")
-builder.add_edge("analizar_cpu", END)
 
-# 6. Compilar
+builder.add_conditional_edges(
+    "consultar_cpu",
+    decidir_ruta,
+    {
+        "consultar_procesos": "consultar_procesos",
+        "__end__": END
+    }
+)
+
+builder.add_edge("consultar_procesos", END)
+
+
+# 7. COMPILAR
 graph = builder.compile()
 
 
-# 7. Ejecutar
+# 8. EJECUTAR
 resultado = graph.invoke({
-    "servidor": "srv-linux-01",
+    "servidor": "srv-oracle-01",
     "cpu": 0,
-    "diagnostico": ""
+    "proceso": "",
+    "diagnostico": "CPU dentro de límites normales"
 })
 
+print("\nRESULTADO FINAL:")
 print(resultado)
