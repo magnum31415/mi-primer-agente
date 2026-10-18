@@ -1,0 +1,23 @@
+[project]
+name = "mi-primer-agente"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=1.4.6",
+    "langchain-openai>=1.7.2",
+    "langgraph>=1.2.16",
+]
+
+[project.scripts]
+mi-primer-agente = "mi_primer_agente:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]
