@@ -1,0 +1,8 @@
+{"timestamp": "2026-10-18T20:12:32.474723+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "START", "detalle": {}}
+{"timestamp": "2026-10-18T20:12:34.474740+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_REQUEST", "detalle": {"tool": "linux_cpu_usage"}}
+{"timestamp": "2026-10-18T20:12:34.475874+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_RESULT", "detalle": {"tool": "linux_cpu_usage", "status": "success"}}
+{"timestamp": "2026-10-18T20:12:35.330155+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_REQUEST", "detalle": {"tool": "linux_processes"}}
+{"timestamp": "2026-10-18T20:12:35.331159+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_RESULT", "detalle": {"tool": "linux_processes", "status": "success"}}
+{"timestamp": "2026-10-18T20:12:35.931066+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_REQUEST", "detalle": {"tool": "linux_memory_usage"}}
+{"timestamp": "2026-10-18T20:12:35.931915+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "TOOL_RESULT", "detalle": {"tool": "linux_memory_usage", "status": "success"}}
+{"timestamp": "2026-10-18T20:12:38.594039+00:00", "run_id": "06359e8f-fa1a-488b-a1bf-0b3fdb8b6aba", "servidor": "srv-oracle-01", "evento": "END", "detalle": {"tool_requests_counted": 3}}
