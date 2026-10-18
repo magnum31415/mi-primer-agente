@@ -1,80 +1,174 @@
 
+import os
+import sys
 from typing import TypedDict, Literal
+
 from langgraph.graph import StateGraph, START, END
+from langchain_openai import ChatOpenAI
 
 
-# 1. STATE
+# ==================================================
+# 1. STATE: Información compartida
+# ==================================================
+
 class AgentState(TypedDict):
     servidor: str
     cpu: int
+    memoria: int
     proceso: str
     diagnostico: str
 
 
-# 2. NODE: Consultar CPU
-def consultar_cpu(state: AgentState):
-    print(f"Consultando CPU de {state['servidor']}")
+# ==================================================
+# 2. NODE: Consultar métricas
+# ==================================================
 
-    # CPU simulada para practicar
-    return {"cpu": 35}
+def consultar_metricas(state: AgentState):
+    print(f"[NODE] Consultando {state['servidor']}")
 
+    # Simulamos métricas de Linux.
+    # En la clase 4 crearemos herramientas reales.
+    if state["servidor"] == "srv-linux-ok":
+        return {
+            "cpu": 25,
+            "memoria": 40,
+            "proceso": "systemd"
+        }
 
-# 3. ROUTER: Decidir el siguiente paso
-def decidir_ruta(state: AgentState) -> Literal[
-    "consultar_procesos", "__end__"
-]:
-    if state["cpu"] > 90:
-        print("CPU elevada. Consultando procesos...")
-        return "consultar_procesos"
-
-    print("CPU normal. Finalizando.")
-    return "__end__"
-
-
-# 4. NODE: Consultar procesos
-def consultar_procesos(state: AgentState):
-    print("Consultando procesos Linux...")
-
-    # Proceso simulado
     return {
-        "proceso": "oracle",
-        "diagnostico": "CPU elevada. Proceso oracle detectado."
+        "cpu": 95,
+        "memoria": 88,
+        "proceso": "oracle"
     }
 
 
-# 5. CREAR EL GRAFO
+# ==================================================
+# 3. ROUTER: Decidir si hace falta diagnóstico
+# ==================================================
+
+def decidir_ruta(
+    state: AgentState
+) -> Literal["diagnosticar_llm", "finalizar_normal"]:
+
+    if state["cpu"] > 90 or state["memoria"] > 90:
+        print("[ROUTER] Anomalía detectada")
+        return "diagnosticar_llm"
+
+    print("[ROUTER] Métricas normales")
+    return "finalizar_normal"
+
+
+# ==================================================
+# 4. NODE: Diagnóstico mediante un LLM
+# ==================================================
+
+def diagnosticar_llm(state: AgentState):
+    print("[NODE] Solicitando diagnóstico al LLM")
+
+    # Crear el cliente del modelo
+    llm = ChatOpenAI(
+        model="gpt-4.1-mini",
+        temperature=0
+    )
+
+    # Instrucciones para el modelo
+    mensajes = [
+        (
+            "system",
+            "Eres un asistente experto en diagnóstico Linux. "
+            "Analiza las métricas proporcionadas. "
+            "Explica las posibles causas y recomienda "
+            "comprobaciones adicionales. "
+            "No inventes evidencias ni afirmes haber "
+            "ejecutado comandos. "
+            "No propongas cambios destructivos."
+            "Define un rollback del cambio para poder asegurar la marcha atrás en caso de que algo falle."
+        ),
+        (
+            "human",
+            f"""
+            Servidor: {state['servidor']}
+            CPU: {state['cpu']}%
+            Memoria: {state['memoria']}%
+            Proceso observado: {state['proceso']}
+
+            Genera un diagnóstico técnico breve
+            en español.
+            """
+        )
+    ]
+
+    # Llamada real al LLM
+    respuesta = llm.invoke(mensajes)
+
+    # Actualizar el estado
+    return {
+        "diagnostico": str(respuesta.content)
+    }
+
+
+# ==================================================
+# 5. NODE: Finalizar sin llamar al LLM
+# ==================================================
+
+def finalizar_normal(state: AgentState):
+    print("[NODE] No se necesita diagnóstico con IA")
+
+    return {
+        "diagnostico": "Métricas dentro de los umbrales."
+    }
+
+
+# ==================================================
+# 6. CONSTRUIR LANGGRAPH
+# ==================================================
+
 builder = StateGraph(AgentState)
 
-builder.add_node("consultar_cpu", consultar_cpu)
-builder.add_node("consultar_procesos", consultar_procesos)
+builder.add_node("consultar_metricas", consultar_metricas)
+builder.add_node("diagnosticar_llm", diagnosticar_llm)
+builder.add_node("finalizar_normal", finalizar_normal)
 
-
-# 6. DEFINIR CONEXIONES
-builder.add_edge(START, "consultar_cpu")
+builder.add_edge(START, "consultar_metricas")
 
 builder.add_conditional_edges(
-    "consultar_cpu",
+    "consultar_metricas",
     decidir_ruta,
     {
-        "consultar_procesos": "consultar_procesos",
-        "__end__": END
+        "diagnosticar_llm": "diagnosticar_llm",
+        "finalizar_normal": "finalizar_normal"
     }
 )
 
-builder.add_edge("consultar_procesos", END)
+builder.add_edge("diagnosticar_llm", END)
+builder.add_edge("finalizar_normal", END)
 
-
-# 7. COMPILAR
 graph = builder.compile()
 
 
-# 8. EJECUTAR
-resultado = graph.invoke({
-    "servidor": "srv-oracle-01",
-    "cpu": 0,
-    "proceso": "",
-    "diagnostico": "CPU dentro de límites normales"
-})
+# ==================================================
+# 7. EJECUTAR
+# ==================================================
 
-print("\nRESULTADO FINAL:")
-print(resultado)
+if __name__ == "__main__":
+
+    if len(sys.argv) != 2:
+        print("Uso: uv run python main.py <servidor>")
+        sys.exit(1)
+
+    servidor = sys.argv[1]
+
+    if not os.getenv("OPENAI_API_KEY"):
+        print("Aviso: OPENAI_API_KEY no configurada.")
+        print("Será necesaria si se detecta una anomalía.")
+
+    resultado = graph.invoke({
+        "servidor": servidor,
+        "cpu": 0,
+        "memoria": 0,
+        "proceso": "",
+        "diagnostico": ""
+    })
+
+    print("\n========== DIAGNÓSTICO ==========")
+    print(resultado["diagnostico"])
