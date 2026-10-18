@@ -444,5 +444,3 @@ La pieza que más valor puede aportar al proyecto no es otro modelo LLM, sino un
 Una vez resuelta esa pregunta, LangGraph, las Skills, MCP y RAG encajan de manera bastante natural.
 
 Y con esto también queda clara la distinción conceptual: **la CMDB le dice al agente dónde investigar; la Skill le explica cómo hacerlo; MCP le proporciona las herramientas; RAG le aporta conocimiento adicional; y LangGraph coordina el proceso.**
-
-````
